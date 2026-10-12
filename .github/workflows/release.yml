@@ -1,0 +1,259 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: '发布版本号 Tag（例如 v1.0.0，留空则自动根据构建号生成）'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  # ============================================================================
+  # 1. Android 构建
+  # ============================================================================
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 获取依赖
+        run: flutter pub get
+
+      - name: 编译 Android Release APK
+        run: flutter build apk --release
+
+      - name: 重命名产物
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/authix-android-release.apk
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk
+          path: dist/authix-android-release.apk
+
+  # ============================================================================
+  # 2. Linux 构建
+  # ============================================================================
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Linux 原生依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsqlite3-dev
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 启用 Linux 桌面支持
+        run: flutter config --enable-linux-desktop
+
+      - name: 获取依赖
+        run: flutter pub get
+
+      - name: 编译 Linux Release
+        run: flutter build linux --release
+
+      - name: 打包 Linux 产物
+        run: |
+          mkdir -p dist
+          tar -czvf dist/authix-linux-x64.tar.gz -C build/linux/x64/release/bundle .
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-release-tar
+          path: dist/authix-linux-x64.tar.gz
+
+  # ============================================================================
+  # 3. Windows 构建
+  # ============================================================================
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 启用 Windows 桌面支持
+        run: flutter config --enable-windows-desktop
+
+      - name: 获取依赖
+        run: flutter pub get
+
+      - name: 编译 Windows Release
+        run: flutter build windows --release
+
+      - name: 打包 Windows 产物
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "dist\authix-windows-x64.zip"
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release-zip
+          path: dist/authix-windows-x64.zip
+
+  # ============================================================================
+  # 4. macOS 构建
+  # ============================================================================
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 启用 macOS 桌面支持
+        run: flutter config --enable-macos-desktop
+
+      - name: 获取依赖
+        run: flutter pub get
+
+      - name: 编译 macOS Release
+        run: flutter build macos --release
+
+      - name: 打包 macOS 产物
+        run: |
+          mkdir -p dist
+          cd build/macos/Build/Products/Release
+          zip -r ../../../../../dist/authix-macos-universal.zip authix.app
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-release-zip
+          path: dist/authix-macos-universal.zip
+
+  # ============================================================================
+  # 5. Web 构建
+  # ============================================================================
+  build-web:
+    name: Build Web
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 获取依赖
+        run: flutter pub get
+
+      - name: 编译 Web Release
+        run: flutter build web --release
+
+      - name: 打包 Web 产物
+        run: |
+          mkdir -p dist
+          cd build/web && zip -r ../../dist/authix-web.zip .
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-release-zip
+          path: dist/authix-web.zip
+
+  # ============================================================================
+  # 6. 发布 GitHub Release（聚合上传各平台产物）
+  # ============================================================================
+  publish-release:
+    name: Publish GitHub Release
+    needs: [build-android, build-linux, build-windows, build-macos, build-web]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 下载所有产物
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: 整理发布产物目录
+        run: |
+          mkdir -p upload-files
+          find release-artifacts -type f -exec cp {} upload-files/ \;
+          ls -lh upload-files/
+
+      - name: 确定发布 Tag
+        id: release_info
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.release_tag }}" ]; then
+            TAG_NAME="${{ github.event.inputs.release_tag }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+          else
+            TAG_NAME="v$(date +'%Y%m%d%H%M')"
+          fi
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: 创建 GitHub Release 并上传资产
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag_name }}
+          name: "Authix Release ${{ steps.release_info.outputs.tag_name }}"
+          body: |
+            ## 🚀 Authix 跨平台多端发布版本
+
+            ### 📦 本次自动构建产物列表：
+            - **Android**: `authix-android-release.apk`
+            - **Windows**: `authix-windows-x64.zip`
+            - **macOS**: `authix-macos-universal.zip`
+            - **Linux**: `authix-linux-x64.tar.gz`
+            - **Web**: `authix-web.zip`
+
+            ---
+            *本 Release 由 GitHub Actions 自动化编译流驱动生成。*
+          files: upload-files/*
+          draft: false
+          prerelease: false
