@@ -107,15 +107,6 @@
 
 ---
 
-## 🤖 GitHub Actions 自动构建
-
-本项目已内置全平台自动化 CI/CD 工作流（位于 [`.github/workflows/release.yml`](.github/workflows/release.yml)）：
-
-1. **自动发布**：只要向仓库推送版本标签（例如 `v1.0.0`），GitHub Actions 将自动并行编译 Android、Windows、macOS、Linux、Web 全平台安装包，并自动创建 GitHub Release 上传资产。
-2. **手动触发**：也可随时在 GitHub 仓库的 **Actions -> Build & Release -> Run workflow** 手动触发编译打包。
-
----
-
 ## 🔐 安全与隐私承诺
 
 1. **零网络权限**：Android 清单、iOS 及各平台配置均未申请任何联网权限，在操作系统级限制网络出入。
