@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/icons/app_icon.png" alt="Authix Logo" width="120" />
+
 # Authix
 
 **🔒 优雅、安全的纯本地离线密码管理器与 2FA/TOTP 双重验证器**
