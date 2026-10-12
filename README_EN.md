@@ -17,7 +17,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Android%20|%20iOS%20|%20macOS%20|%20Windows%20|%20Linux%20|%20Web-lightgrey.svg)]()
 [![Offline First](https://img.shields.io/badge/Offline--First-100%25-success)]()
 
-[Features](#-key-features) • [Downloads](#-downloads--releases) • [Build from Source](#-build-from-source) • [CI/CD Automation](#-github-actions-automation) • [Security & Privacy](#-security--privacy-commitments) • [License](#-license)
+[Features](#-key-features) • [Downloads](#-downloads--releases) • [Build from Source](#-build-from-source) • [Security & Privacy](#-security--privacy-commitments) • [License](#-license)
 
 </div>
 
@@ -113,14 +113,6 @@ Authix maintains unified native build scripts for all host environments:
   ```
 Compiled binaries will be automatically collected under the `release/` directory.
 
----
-
-## 🤖 GitHub Actions Automation
-
-This repository includes a multi-platform CI/CD workflow ([`.github/workflows/release.yml`](.github/workflows/release.yml)):
-
-1. **Tag-Triggered Releases**: Pushing any tag matching `v*` (e.g. `v1.0.0`) automatically compiles binaries across Android, Windows, macOS, Linux, and Web, creating a full GitHub Release.
-2. **Manual Trigger**: You can also manually trigger builds via **Actions -> Build & Release -> Run workflow** on GitHub.
 
 ---
 

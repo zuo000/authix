@@ -17,7 +17,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Android%20|%20iOS%20|%20macOS%20|%20Windows%20|%20Linux%20|%20Web-lightgrey.svg)]()
 [![Offline First](https://img.shields.io/badge/Offline--First-100%25-success)]()
 
-[功能特點](#-功能特點) • [安裝下載](#-下載與安裝) • [本地編譯構建](#-本地編譯構建) • [自動化發布](#-github-actions-自動構建) • [安全與隱私](#-安全與隱私承諾) • [開源授權](#-開源授權)
+[功能特點](#-功能特點) • [安裝下載](#-下載與安裝) • [本地編譯構建](#-本地編譯構建) • [安全與隱私](#-安全與隱私承諾) • [開源授權](#-開源授權)
 
 </div>
 
@@ -113,14 +113,6 @@
   ```
 所有編譯產物將自動輸出並歸檔在根目錄的 `release/` 資料夾中。
 
----
-
-## 🤖 GitHub Actions 自動構建
-
-本專案已內建全平台自動化 CI/CD 工作流程（位於 [`.github/workflows/release.yml`](.github/workflows/release.yml)）：
-
-1. **自動發布**：只要向專案推送版本標籤（例如 `v1.0.0`），GitHub Actions 將自動平行編譯 Android、Windows、macOS、Linux、Web 全平台安裝套件，並自動建立 GitHub Release 上傳資產。
-2. **手動觸發**：亦可隨時在 GitHub 專案的 **Actions -> Build & Release -> Run workflow** 手動觸發編譯打包。
 
 ---
 
