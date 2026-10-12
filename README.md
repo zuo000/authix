@@ -1,10 +1,16 @@
 <div align="center">
 
-<img src="assets/icons/app_icon.png" alt="Authix Logo" width="120" />
+<img src="assets/icons/app_icon_rounded.png" alt="Authix Logo" width="120" />
 
 # Authix
 
 **🔒 优雅、安全的纯本地离线密码管理器与 2FA/TOTP 双重验证器**
+
+<p align="center">
+  <a href="README.md">简体中文</a> •
+  <a href="README_EN.md">English</a> •
+  <a href="README_ZH-TW.md">繁體中文</a>
+</p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
@@ -106,6 +112,15 @@
   .\build.ps1 -Target windows
   ```
 所有编译产物将自动输出并归档在根目录的 `release/` 文件夹中。
+
+---
+
+## 🤖 GitHub Actions 自动构建
+
+本项目已内置全平台自动化 CI/CD 工作流（位于 [`.github/workflows/release.yml`](.github/workflows/release.yml)）：
+
+1. **自动发布**：只要向仓库推送版本标签（例如 `v1.0.0`），GitHub Actions 将自动并行编译 Android、Windows、macOS、Linux、Web 全平台安装包，并自动创建 GitHub Release 上传资产。
+2. **手动触发**：也可随时在 GitHub 仓库的 **Actions -> Build & Release -> Run workflow** 手动触发编译打包。
 
 ---
 
