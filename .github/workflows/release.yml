@@ -173,7 +173,42 @@ jobs:
           path: dist/authix-macos-universal.zip
 
   # ============================================================================
-  # 5. Web 构建
+  # 5. iOS 构建 (免证书未签名 IPA)
+  # ============================================================================
+  build-ios:
+    name: Build iOS (Unsigned IPA)
+    runs-on: macos-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 获取依赖
+        run: flutter pub get
+
+      - name: 编译 iOS Release (免证书)
+        run: flutter build ios --release --no-codesign
+
+      - name: 打包成 .ipa
+        run: |
+          mkdir -p dist
+          mkdir -p Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -q -r dist/authix-ios-unsigned.ipa Payload
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-release-ipa
+          path: dist/authix-ios-unsigned.ipa
+
+  # ============================================================================
+  # 6. Web 构建
   # ============================================================================
   build-web:
     name: Build Web
@@ -206,11 +241,11 @@ jobs:
           path: dist/authix-web.zip
 
   # ============================================================================
-  # 6. 发布 GitHub Release（聚合上传各平台产物）
+  # 7. 发布 GitHub Release（聚合上传各平台产物）
   # ============================================================================
   publish-release:
     name: Publish GitHub Release
-    needs: [build-android, build-linux, build-windows, build-macos, build-web]
+    needs: [build-android, build-linux, build-windows, build-macos, build-ios, build-web]
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码
@@ -249,6 +284,7 @@ jobs:
 
             ### 📦 本次自动构建产物列表：
             - **Android**: `authix-android-release.apk`
+            - **iOS**: `authix-ios-unsigned.ipa` (免签名安装包)
             - **Windows**: `authix-windows-x64.zip`
             - **macOS**: `authix-macos-universal.zip`
             - **Linux**: `authix-linux-x64.tar.gz`
