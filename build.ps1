@@ -178,6 +178,7 @@ if (Test-Path $PubspecPath) {
 # 4. 编译 Flutter Windows Release
 Log-Info "正在拉取依赖并编译 Flutter Windows Release..."
 flutter pub get
+$env:CL = "$env:CL /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
 flutter build windows --release --build-name=$VersionName --build-number=$BuildNumber
 
 $BuildRunnerDir = Join-Path -Path $RootDir -ChildPath "build\windows\x64\runner\Release"

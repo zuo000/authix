@@ -120,6 +120,8 @@ jobs:
 
       - name: 编译 Windows Release
         run: flutter build windows --release
+        env:
+          CL: "/D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
 
       - name: 打包 Windows 产物
         shell: pwsh
