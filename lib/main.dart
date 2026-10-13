@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/database/database_helper.dart';
@@ -26,6 +27,10 @@ class AuthixApp extends ConsumerWidget {
 
     const brandColor = Color(0xFF1D63ED); // 沉稳内敛、高质感可信赖的专业科技蔚蓝 (Royal Azure / Sapphire)
 
+    final isWindows = defaultTargetPlatform == TargetPlatform.windows;
+    final fontFamily = isWindows ? 'Segoe UI' : null;
+    final fontFamilyFallback = isWindows ? const ['Microsoft YaHei', 'sans-serif'] : null;
+
     return MaterialApp(
       title: 'Authix 密码库',
       debugShowCheckedModeBanner: false,
@@ -33,6 +38,8 @@ class AuthixApp extends ConsumerWidget {
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
+        fontFamily: fontFamily,
+        fontFamilyFallback: fontFamilyFallback,
         colorScheme: ColorScheme.fromSeed(
           seedColor: brandColor,
           brightness: Brightness.light,
@@ -98,6 +105,8 @@ class AuthixApp extends ConsumerWidget {
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
+        fontFamily: fontFamily,
+        fontFamilyFallback: fontFamilyFallback,
         colorScheme: ColorScheme.fromSeed(
           seedColor: brandColor,
           brightness: Brightness.dark,

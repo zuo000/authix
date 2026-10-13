@@ -45,15 +45,21 @@ if ([string]::IsNullOrWhiteSpace($RawVersion)) {
     $RawVersion = "1.0.0"
 }
 
-# 解析主版本号和构建号
+# 解析版本号与构建号（兼容 1.0.0 或 1.0.0+10 格式）
 $VersionName = $RawVersion
-$BuildNumber = (Get-Date -UFormat %s).Substring(4, 6)
+$BuildNumber = ""
 if ($RawVersion -match '^([0-9]+\.[0-9]+\.[0-9]+)\+?([0-9]*)$') {
     $VersionName = $matches[1]
     if (-not [string]::IsNullOrWhiteSpace($matches[2])) {
         $BuildNumber = $matches[2]
     }
 }
+
+if ([string]::IsNullOrWhiteSpace($BuildNumber)) {
+    $BuildNumber = (Get-Date -UFormat %s).Substring(4, 6) # 自动基于时间戳生成构建编号
+}
+
+$FullVersion = "$VersionName+$BuildNumber"
 
 # 确保 release 目录存在
 if (-not (Test-Path $ReleaseDir)) {
@@ -154,11 +160,19 @@ function Check-And-Setup-Flutter-Environment {
 
 Check-And-Setup-Flutter-Environment
 
-# 3. 同步版本至 pubspec.yaml
+# 3. 仅当 pubspec.yaml 的主版本号与 version 文件不一致时同步基线版本，避免每次构建动态写入时间戳导致 Git 记录污染
 $PubspecPath = Join-Path -Path $RootDir -ChildPath "pubspec.yaml"
 if (Test-Path $PubspecPath) {
-    Log-Info "正在同步版本号至 pubspec.yaml -> $VersionName+$BuildNumber..."
-    (Get-Content -Path $PubspecPath) -replace '^version:.*', "version: $VersionName+$BuildNumber" | Set-Content -Path $PubspecPath -Encoding UTF8
+    $pubspecRaw = [System.IO.File]::ReadAllText($PubspecPath)
+    $currentPubspecVer = ""
+    if ($pubspecRaw -match '(?m)^version:\s*([^\r\n+]+)') {
+        $currentPubspecVer = $matches[1].Trim()
+    }
+    if ($currentPubspecVer -ne $VersionName) {
+        Log-Info "正在同步主版本号至 pubspec.yaml -> ${VersionName}+1..."
+        $pubspecRaw = $pubspecRaw -replace '(?m)^version:.*', "version: ${VersionName}+1"
+        [System.IO.File]::WriteAllText($PubspecPath, $pubspecRaw, [System.Text.UTF8Encoding]::new($false))
+    }
 }
 
 # 4. 编译 Flutter Windows Release
@@ -237,8 +251,11 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 
     $IsccPaths = @(
         "ISCC.exe",
-        "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+        "${env:ProgramFiles}\Inno Setup 7\ISCC.exe",
+        "${env:ProgramFiles(x86)}\Inno Setup 7\ISCC.exe",
+        "${env:LOCALAPPDATA}\Programs\Inno Setup 7\ISCC.exe",
         "${env:ProgramFiles}\Inno Setup 6\ISCC.exe",
+        "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
         "${env:LOCALAPPDATA}\Programs\Inno Setup 6\ISCC.exe"
     )
 
@@ -253,6 +270,19 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
         }
     }
 
+    if (-not $IsccFound) {
+        $InnoBases = @("${env:ProgramFiles}", "${env:ProgramFiles(x86)}", "${env:LOCALAPPDATA}\Programs")
+        foreach ($base in $InnoBases) {
+            if (Test-Path $base) {
+                $matched = Get-ChildItem -Path "$base\Inno Setup*" -Filter "ISCC.exe" -Recurse -Depth 1 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName -First 1
+                if ($matched) {
+                    $IsccFound = $matched
+                    break
+                }
+            }
+        }
+    }
+
     if ($IsccFound) {
         Log-Info "调用 Inno Setup 编译安装向导程序: $IsccFound"
         & $IsccFound $IssPath
@@ -260,7 +290,7 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
     } else {
         Log-Warn "未在系统检测到 Inno Setup (ISCC.exe)。"
         Log-Warn "已为您生成标准安装脚本: $IssPath"
-        Log-Warn "安装 Inno Setup 6 (https://jrsoftware.org/isdl.php) 后重新运行本脚本即可自动生成 .exe 安装包。"
+        Log-Warn "安装 Inno Setup (https://jrsoftware.org/isdl.php) 后重新运行本脚本即可自动生成 .exe 安装包。"
     }
 }
 

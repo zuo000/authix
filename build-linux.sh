@@ -163,10 +163,11 @@ prepare_dependencies() {
     log_info "确保开启 Linux 桌面端构建配置 (flutter config --enable-linux-desktop)..."
     flutter config --enable-linux-desktop > /dev/null 2>&1 || true
 
-    # 4. 同步版本号至 pubspec.yaml
-    if grep -q "^version:" "${ROOT_DIR}/pubspec.yaml"; then
-        log_info "正在同步版本号至 pubspec.yaml -> ${FULL_VERSION}..."
-        sed -i "s/^version:.*/version: ${FULL_VERSION}/" "${ROOT_DIR}/pubspec.yaml" 2>/dev/null || sed -i '' "s/^version:.*/version: ${FULL_VERSION}/" "${ROOT_DIR}/pubspec.yaml"
+    # 4. 仅当 pubspec.yaml 的主版本号与 version 文件不一致时同步基线版本，避免每次构建动态写入时间戳导致 Git 记录污染
+    CURRENT_PUBSPEC_VER=$(grep "^version:" "${ROOT_DIR}/pubspec.yaml" | awk '{print $2}' | cut -d'+' -f1)
+    if [ "$CURRENT_PUBSPEC_VER" != "$VERSION_NAME" ]; then
+        log_info "正在同步主版本号至 pubspec.yaml -> ${VERSION_NAME}+1..."
+        sed -i "s/^version:.*/version: ${VERSION_NAME}+1/" "${ROOT_DIR}/pubspec.yaml" 2>/dev/null || sed -i '' "s/^version:.*/version: ${VERSION_NAME}+1/" "${ROOT_DIR}/pubspec.yaml"
     fi
 
     # 5. 检查 Linux 原生构建基础工具链
